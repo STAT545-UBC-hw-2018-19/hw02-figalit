@@ -1,0 +1,167 @@
+---
+title: "hw02-solution.Rmd"
+output:
+  github_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: inline
+---
+### Loading gapminder dataset and tidyverse. 
+
+```{r}
+library(gapminder)
+suppressPackageStartupMessages(library(tidyverse))
+```
+
+### Exploring the dataset!
+The gapminder dataset is a data frame. In oher words, this is tabular data!
+We can print out the object itself to understand this as:
+```{r}
+df <- gapminder
+df
+ncol(df)
+```
+It seems the data frame has 6 columns and there are 1704 rows in the dataset: 
+```{r}
+nrow(df)
+```
+A quick summary can be obtained with the summary function. This helps when you want to understand the data in terms of the common statistical insights it can provide, like mean, median, quantiles, min or max. 
+```{r}
+summary(df)
+```
+
+Classes - or data types of each of the variables:
+```{r}
+class(df$country) # factor
+# Or we could apply the function class directly!
+sapply(df, class)
+```
+
+Size of dataset, or an idea about the contents an be obtained in many different ways. 
+```{r}
+?str
+str(df)
+```
+For example, the str function can be used when we want to learn the name of the columns of data in the tibble, and the data types quickly and in a well-formatted, compact way, as well as some of the values per column.
+
+### Exploring individual variables
+
+What are possible values (or range, whichever is appropriate) of each variable?
+For the quantitative variable of population, range is as below:
+```{r}
+population <- df$pop
+min(population) 
+max(population) 
+summary(population)
+```
+
+Let's look at a histogram for this:
+```{r}
+hist(population, breaks=12, col="blue")
+```
+It seems like an exponential distribution. 
+
+It also seems there is more instances of the population being generally lower than the greatest value, as can be seen by summary statistics and histogram plot.
+A nicer looks for this:
+```{r}
+ggplot(gapminder, aes(population)) + geom_histogram(aes(fill=continent), bins=25)
+```
+
+For the continent categorical variable:
+```{r}
+continents <- df$continent
+summary(continents)
+```
+```{r}
+ggplot(df, aes(x=population, y=continents, color=population)) + geom_point()
+```
+
+From this we understand most of the countries with a high population over all years included in the dataframe(we don't care about that for now), is Asia. And Oceania is mostly very little habitated. 
+
+### Explore various plot types
+
+A scatterplot of two quantitative variables.
+```{r}
+ggplot(gapminder, aes(x=population, y=lifeExp, color=continent)) +
+  geom_point() +
+  scale_y_log10()
+```
+
+A densityplot of one quantitative variable.
+```{r}
+plot(density(population))
+```
+```{r}
+plot(density(df$gdpPercap))
+```
+
+A plot of one quantitative variable and one categorical follow. 
+```{r}
+continent_pop <- ggplot(gapminder, aes(continent, gdpPercap)) + scale_y_log10()
+continent_pop + geom_boxplot()
+```
+
+I am also including for the country of China:
+```{r}
+china <- ggplot(filter(gapminder, country == "China"), aes(country, gdpPercap)) + scale_y_log10()
+china + geom_boxplot()
+```
+
+### Use filter(), select() and %>%
+A different view on the gdpPercap-lifeExp scatterplot over time, for a filtered period
+```{r}
+gapminder %>%
+  filter(population > 100000 & population < 1000000) %>%
+  select(-continent) %>%
+  ggplot(aes(gdpPercap, lifeExp, color=year)) + geom_point()
+```
+
+And yet over different continents:
+```{r}
+gapminder %>%
+  filter(population > 100000 & population < 1000000) %>%
+  ggplot(aes(gdpPercap, lifeExp, color=continent)) + geom_point()
+```
+
+### But I want to do more!
+
+This is not correct!
+```{r}
+filter(gapminder, country == "Rwanda") # 12 rows
+filter(gapminder, country == "Afghanistan") # 12 rows
+filter(gapminder, country == c("Rwanda", "Afghanistan")) # 12 rows :(
+```
+
+The correct version would be:
+```{r}
+filter(gapminder, country == "Rwanda" | country == "Afghanistan")
+# or
+filter(gapminder, country %in% c("Rwanda", "Afghanistan"))
+```
+
+With kable:
+```{r}
+library(knitr)
+kable(filter(gapminder, country %in% c("Rwanda", "Afghanistan")))
+```
+
+Let's use the _group\_by_ and _summarise_ function:
+```{r}
+# Group by continent the data
+by_continent <- group_by(gapminder, continent)
+# Then summarise using the population mean and the lifeExpectancy mean.
+data <- summarise(by_continent,
+  count = n(),
+  pop = median(population, na.rm = TRUE),
+  lifeExpectancy = mean(lifeExp, na.rm = TRUE)
+)
+# Additional filtering step
+data <- filter(data, pop > 10000)
+
+# Plotting mean life explectancy of each continent. The bubbles give an idea of which continent had the most data points in the gapminder df.
+ggplot(data = data, mapping = aes(x = continent, y = lifeExpectancy, color=continent)) +
+  geom_point(aes(size = count), alpha = 1/3) +
+  geom_smooth(se = FALSE)
+
+```
+
