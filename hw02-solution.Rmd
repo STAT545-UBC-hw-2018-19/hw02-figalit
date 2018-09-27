@@ -1,8 +1,7 @@
 ---
 title: "hw02-solution.Rmd"
 output:
-  github_document:
-    df_print: paged
+  github_document
 editor_options:
   chunk_output_type: inline
 ---
@@ -11,6 +10,8 @@ editor_options:
 ```{r}
 library(gapminder)
 suppressPackageStartupMessages(library(tidyverse))
+library(knitr)
+
 ```
 
 ### Exploring the dataset!
@@ -18,7 +19,6 @@ The gapminder dataset is a data frame. In oher words, this is tabular data!
 We can print out the object itself to understand this as:
 ```{r}
 df <- gapminder
-df
 ncol(df)
 ```
 It seems the data frame has 6 columns and there are 1704 rows in the dataset: 
@@ -39,7 +39,6 @@ sapply(df, class)
 
 Size of dataset, or an idea about the contents an be obtained in many different ways. 
 ```{r}
-?str
 str(df)
 ```
 For example, the str function can be used when we want to learn the name of the columns of data in the tibble, and the data types quickly and in a well-formatted, compact way, as well as some of the values per column.
@@ -134,16 +133,11 @@ filter(gapminder, country == c("Rwanda", "Afghanistan")) # 12 rows :(
 
 The correct version would be:
 ```{r}
-filter(gapminder, country == "Rwanda" | country == "Afghanistan")
+kable(filter(gapminder, country == "Rwanda" | country == "Afghanistan"))
 # or
-filter(gapminder, country %in% c("Rwanda", "Afghanistan"))
-```
-
-With kable:
-```{r}
-library(knitr)
 kable(filter(gapminder, country %in% c("Rwanda", "Afghanistan")))
 ```
+
 
 Let's use the _group\_by_ and _summarise_ function:
 ```{r}
